@@ -5,7 +5,7 @@ The Chaparral API Pydantic BaseModels.
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class Project(BaseModel):
@@ -73,15 +73,14 @@ class SearchResultDownload(BaseModel):
     """
     The search result download data.
     """
+    model_config = ConfigDict(populate_by_name=True)
+
     config_json: str = Field(..., alias='config.json')
     matched_fragments_parquet: str = Field(..., alias='matched_fragments.sage.parquet')
     peptide_csv: str = Field(..., alias='peptide.csv')
     proteins_csv: str = Field(..., alias='proteins.csv')
     results_json: str = Field(..., alias='results.json')
     results_parquet: str = Field(..., alias='results.sage.parquet')
-
-    class Config:
-        populate_by_name = True
 
 
 class QcScore(BaseModel):
