@@ -39,3 +39,8 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.dynamic]
 version = {attr = "chaparralapi.__version__"}
+
+
+# pylint
+[tool.pylint.messages_control]
+max-line-length=120

@@ -1,9 +1,17 @@
+"""
+The Chaparral API Pydantic BaseModels.
+"""
+
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 class Project(BaseModel):
+    """
+    The project data.
+    """
     user_id: str
     organization_id: str
     id: str
@@ -14,6 +22,9 @@ class Project(BaseModel):
 
 
 class Organization(BaseModel):
+    """
+    The organization data.
+    """
     id: str
     name: str
     created_at: datetime
@@ -21,6 +32,9 @@ class Organization(BaseModel):
 
 
 class Fasta(BaseModel):
+    """
+    The FASTA data.
+    """
     id: str
     name: str
     crc32: int
@@ -33,6 +47,9 @@ class Fasta(BaseModel):
 
 
 class SearchResult(BaseModel):
+    """
+    The search result data.
+    """
     id: str
     notes: Optional[str] = None
     passing_psms: Optional[int] = None
@@ -53,6 +70,9 @@ class SearchResult(BaseModel):
 
 
 class SearchResultDownload(BaseModel):
+    """
+    The search result download data.
+    """
     config_json: str = Field(..., alias='config.json')
     matched_fragments_parquet: str = Field(..., alias='matched_fragments.sage.parquet')
     peptide_csv: str = Field(..., alias='peptide.csv')
@@ -65,12 +85,18 @@ class SearchResultDownload(BaseModel):
 
 
 class QcScore(BaseModel):
+    """
+    The quality control score data.
+    """
     bin: float
     count: int
     is_decoy: bool
 
 
 class QcId(BaseModel):
+    """
+    The identification quality control data.
+    """
     filename: str
     peptides: int
     protein_groups: int
@@ -78,6 +104,9 @@ class QcId(BaseModel):
 
 
 class QcPrecursor(BaseModel):
+    """
+    The precursor quality control data.
+    """
     filename: str
     q10: float
     q25: float
