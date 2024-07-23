@@ -23,13 +23,13 @@ token = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
 api = Client(token)
 
 # Fetch and print all projects
-print(api.get_all_projects())
+print(api.get_projects())
 
 # Fetch and print organization details
 print(api.get_organization())
 
 # Fetch and print all FASTA databases
-print(api.get_all_fastas())
+print(api.get_databases())
 ```
 
 ## Obtaining the API Token

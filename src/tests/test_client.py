@@ -30,7 +30,7 @@ def test_get_all_projects(api, mocker):
         }
     ]
     mocker.patch('requests.get', return_value=mocked_response(mock_data))
-    projects = api.get_all_projects()
+    projects = api.get_projects()
     assert len(projects) == 1
     assert projects[0].id == "proj123"
 
@@ -75,10 +75,22 @@ def test_update_project(api, mocker):
         "name": "Updated Project",
         "description": "Updated Description",
         "tags": ["updated", "project"],
-        "created_at": "2024-05-15T12:00:00Z"
+        "created_at": "2024-04-15T12:00:00Z",
+        "updated_at": "2024-05-15T12:10:00Z"
+    }
+    mock_get_data = {
+        "user_id": "user123",
+        "organization_id": "org123",
+        "id": project_id,
+        "name": "Project",
+        "description": "Description",
+        "tags": ["updated"],
+        "created_at": "2024-04-15T12:00:00Z",
+        "updated_at": "2024-04-15T12:10:00Z"
     }
     mocker.patch('requests.put', return_value=mocked_response(mock_data))
-    updated_proj = api.update_project(project_id, 'Updated Project', 'Updated Description')
+    mocker.patch('requests.get', return_value=mocked_response(mock_get_data))
+    updated_proj = api.update_project(project_id, 'Updated Project', 'Updated Description', ['updated'])
     assert updated_proj.id == project_id
     assert updated_proj.name == "Updated Project"
 
@@ -101,24 +113,6 @@ def test_get_organization(api, mocker):
     assert organization.id == "org123"
 
 
-def test_update_organization(api, mocker):
-    mock_data = {
-        "id": "org123",
-        "name": "Updated Organization",
-        "created_at": "2024-05-15T12:00:00Z",
-        "updated_at": "2024-05-16T12:00:00Z"
-    }
-    mocker.patch('requests.put', return_value=mocked_response(mock_data))
-    updated_org = api.update_organization('Updated Organization')
-    assert updated_org.name == "Updated Organization"
-
-
-def test_invite_to_organization(api, mocker):
-    mock_data = {}
-    mocker.patch('requests.post', return_value=mocked_response(mock_data, 201))
-    api.invite_to_organization('test@example.com')
-
-
 def test_get_all_fastas(api, mocker):
     mock_data = [
         {
@@ -134,7 +128,7 @@ def test_get_all_fastas(api, mocker):
         }
     ]
     mocker.patch('requests.get', return_value=mocked_response(mock_data))
-    fastas = api.get_all_fastas()
+    fastas = api.get_databases()
     assert len(fastas) == 1
     assert fastas[0].id == "fasta123"
 
@@ -153,7 +147,7 @@ def test_get_fasta(api, mocker):
         "organization_id": "org123"
     }
     mocker.patch('requests.get', return_value=mocked_response(mock_data))
-    fasta = api.get_fasta(fasta_id)
+    fasta = api.get_database(fasta_id)
     assert fasta.id == fasta_id
 
 
@@ -171,15 +165,16 @@ def test_update_fasta(api, mocker):
         "organization_id": "org123"
     }
     mocker.patch('requests.put', return_value=mocked_response(mock_data))
-    updated_fasta = api.update_fasta(fasta_id, "Updated Fasta", "Mouse", "DECOY")
+    updated_fasta = api.update_database(fasta_id, "Updated Fasta", "Mouse", "DECOY")
     assert updated_fasta.name == "Updated Fasta"
     assert updated_fasta.organism == "Mouse"
+
 
 
 def test_delete_fasta(api, mocker):
     fasta_id = "fasta124"
     mocker.patch('requests.delete', return_value=mocked_response({}, 204))
-    api.delete_fasta(fasta_id)
+    api.delete_database(fasta_id)
 
 
 def test_get_all_search_results(api, mocker):
@@ -191,7 +186,7 @@ def test_get_all_search_results(api, mocker):
             "passing_peptides": 20,
             "passing_proteins": 5,
             "input_files": ["file1", "file2"],
-            "params": {"param1": "value1"},
+            "params": {'chimera': False, 'database': {'bucket_size': None, 'decoy_tag': None, 'enzyme': {'c_terminal': True, 'cleave_at': 'KR', 'max_len': 30, 'min_len': 7, 'missed_cleavages': 1, 'restrict': None}, 'fasta': 'fasta_067P9PD0WC3B9P1T60F57GG1B4', 'fragment_max_mz': None, 'fragment_min_mz': None, 'generate_decoys': None, 'ion_kinds': None, 'max_variable_mods': None, 'min_ion_index': None, 'peptide_max_mass': None, 'peptide_min_mass': None, 'static_mods': {'C': 57.021461486816406}, 'variable_mods': {'M': [15.994915008544922]}}, 'deisotope': True, 'fragment_tol': {'ppm': [-10, 10]}, 'isotope_errors': [-1, 3], 'linear_model': {'contrasts': [], 'designs': [{'filename': 'QEX3_1170178', 'group': '?', 'tmt_channel': None}]}, 'max_fragment_charge': 1, 'max_peaks': 150, 'min_matched_peaks': 4, 'min_peaks': 15, 'mzml_paths': None, 'output_directory': None, 'precursor_tol': {'ppm': [-50, 50]}, 'predict_rt': True, 'quant': {'lfq': False, 'lfq_settings': {'ppm_tolerance': 5}, 'tmt': None, 'tmt_settings': {'level': 3}}, 'report_psms': 1, 'wide_window': False, 'write_pin': None},
             "project_id": "proj123",
             "project_name": "Test Project",
             "organization_id": "org123",
@@ -199,13 +194,13 @@ def test_get_all_search_results(api, mocker):
             "created_at": "2024-05-15T12:00:00Z",
             "started_at": "2024-05-15T12:10:00Z",
             "finished_at": "2024-05-15T13:00:00Z",
-            "status": "completed",
+            "status": "SUCCEEDED",
             "cpu": 4,
             "memory": 16
         }
     ]
     mocker.patch('requests.get', return_value=mocked_response(mock_data))
-    search_results = api.get_all_search_results()
+    search_results = api.get_search_results()
     assert len(search_results) == 1
     assert search_results[0].id == "sr123"
 
