@@ -1,6 +1,7 @@
 """
 The Client class is a wrapper around the Chaparral API.
 """
+import os
 from typing import List, Optional, Dict
 
 import requests
@@ -90,7 +91,7 @@ class Client:
         :rtype: List[models.Project]
         """
         projects = self.get_projects()
-        return [project for project in projects if tag in project.tags]
+        return [project for project in projects if project.tags and tag in project.tags]
 
     def create_project(self, name: str, description: str) -> models.Project:
         """
@@ -142,6 +143,8 @@ class Client:
         projects = []
         for project in [self.get_project(project_id) for project_id in project_ids]:
             project.tags = tags
+            if project.tags is None:
+                project.tags = []
             updated_project = self.update_project(project.id, project.name, project.description, project.tags + tags)
             projects.append(updated_project)
         return projects
@@ -282,9 +285,8 @@ class Client:
         :return: The SearchResult model or None if not found.
         :rtype: Optional[models.SearchResult]
         """
-        result_data = routes.search_results.get_search_result(token=self.token, search_result_id=search_result_id,
-                                                              base_url=self.base_url, timeout=self.timeout)
-        return models.SearchResult.model_validate(result_data)
+        search_results = self.get_search_results()
+        return next((result for result in search_results if result.id == search_result_id), None)
 
     def get_search_result_download(self, search_result_id: str) -> models.SearchResultDownload:
         """
@@ -446,7 +448,7 @@ class Client:
         raw_files = self.get_project_files(project_id)
         return next((raw_file for raw_file in raw_files if raw_file.id == file_id), None)
 
-    def upload_project_file(self, project_id: str, file_bytes: bytes, filename: str):
+    def upload_project_file(self, project_id: str, file_bytes: bytes, filename: str) -> None:
         """
         Uploads a file to a specific project.
 
@@ -460,6 +462,56 @@ class Client:
         routes.project_file.upload_project_file(token=self.token, project_id=project_id, file_bytes=file_bytes,
                                                 filename=filename, base_url=self.base_url,
                                                 timeout=self.file_upload_timeout)
+
+    def upload_dfolder(self, project_id: str, folder_path: str, file_basename: str = None) -> None:
+        """
+        Uploads the .tdf and .tdfbin files from a bruker .d folder.
+        :param project_id: The ID of the project.
+        :type project_id: str
+        :param folder_path: The path to the folder containing the .tdf and .tdfbin files.
+        :type folder_path: str
+        :param file_basename: The basename of the files to upload.
+        :type file_basename: str
+        """
+        if file_basename is None:
+            file_basename = os.path.basename(folder_path)
+
+        files = os.listdir(folder_path)
+
+        # check if .tdf and or .tdfbin files are present
+        contains_tdf = any(file.endswith('.tdf') for file in files)
+        contains_tdfbin = any(file.endswith('.tdfbin') for file in files)
+
+        if not contains_tdf and not contains_tdfbin:
+            raise ValueError(f"No .tdf or .tdfbin files found in {folder_path}")
+
+        for file in files:
+            if file.endswith('.tdf') or file.endswith('.tdfbin'):
+                file_path = os.path.join(folder_path, file)
+                with open(file_path, 'rb') as f:
+                    self.upload_project_file(project_id, f.read(), file_basename)
+
+    def upload_raw_file(self, project_id: str, file_path: str, file_basename: str = None) -> None:
+        """
+        Uploads a raw file to a specific project.
+
+        :param project_id: The ID of the project.
+        :type project_id: str
+        :param file_path: The path to raw file to upload.
+        :type file_path: str
+        :param file_basename: The basename of the files to upload.
+        :type file_basename: str
+        """
+
+        if file_basename is None:
+            file_basename = os.path.basename(file_path)
+
+        # check if file ends with .raw
+        if not file_basename.endswith('.raw'):
+            raise ValueError(f"File {file_basename} is not a .raw file.")
+
+        with open(file_path, 'rb') as f:
+            self.upload_project_file(project_id, f.read(), file_basename)
 
     def submit_search(self, project_id: str, search_settings: Dict) -> None:
         """
@@ -503,7 +555,7 @@ class Client:
         profile_data = routes.profile.get_profile(token=self.token, base_url=self.base_url, timeout=self.timeout)
         return models.Profile.model_validate(profile_data)
 
-    def update_user_profile(self, first_name: str, last_name: str) -> models.Profile:
+    def update_user_profile(self, first_name: str, last_name: str) -> None:
         """
         Updates the user's profile information.
 
@@ -511,10 +563,6 @@ class Client:
         :type first_name: str
         :param last_name: The user's last name.
         :type last_name: str
-        :return: The updated Profile model.
-        :rtype: models.Profile
         """
         data = {'first_name': first_name, 'last_name': last_name}
-        updated_data = routes.profile.update_profile(token=self.token, data=data, base_url=self.base_url,
-                                                     timeout=self.timeout)
-        return models.Profile.model_validate(updated_data)
+        routes.profile.update_profile(token=self.token, data=data, base_url=self.base_url, timeout=self.timeout)

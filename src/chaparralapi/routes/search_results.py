@@ -23,13 +23,6 @@ def get_search_results(token: str, project_id: Optional[str] = None, base_url: s
     return results_data
 
 
-def get_search_result(token: str, search_result_id: str, base_url: str = DEFAULT_BASE_URL, timeout: Optional[int] = None
-                      ) -> Dict[str, Any]:
-    url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}"
-    result_data = get(token, url, timeout)
-    return result_data
-
-
 def delete_search_result(token: str, search_result_id: str, base_url: str = DEFAULT_BASE_URL,
                          timeout: Optional[int] = None) -> None:
     url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}"

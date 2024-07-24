@@ -4,6 +4,9 @@ from datetime import datetime
 
 
 class Profile(BaseModel):
+    """
+    The User Profile data.
+    """
     id: str
     email: EmailStr
     email_verified: bool

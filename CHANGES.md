@@ -2,11 +2,10 @@
 
 ## TODO
 - Add more tests
-- more stringent pydantic models with string literals
-- Add more API endpoints
-- search results has a params option which is currently just a dict, should be a pydantic model
-- think about versioning
-- get list of servers and ping each to see closest
+
+## [0.1.0]
+- Added remaining endpoints
+- updated to models/routes structure
 
 ## [0.0.2]
 

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class Database(BaseModel):
     """
-    The FASTA data.
+    The Database data.
     """
     id: str
     name: str

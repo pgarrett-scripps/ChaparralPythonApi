@@ -5,6 +5,9 @@ from pydantic import BaseModel
 
 
 class ProjectFile(BaseModel):
+    """
+    The Project File data. (.Raw and .D folders)
+    """
     id: str
     file: str
     extension: str

@@ -43,6 +43,7 @@ To get your Chaparral API token, follow these steps:
 5. Copy the token from the `Authorization` header.
 6. The token will be valid for 8 hours.
 
+Sure, here is the updated README to include the new endpoints in the `Client` class:
 
 ## Endpoints
 
@@ -50,7 +51,7 @@ This section describes the endpoints available in the `Client` class for interac
 
 #### Project Endpoints
 
-- **Get All Projects:** `get_all_projects() -> List[Project]`
+- **Get All Projects:** `get_projects() -> List[Project]`
   - Retrieves a list of all projects.
 
 - **Get Project by ID:** `get_project(project_id: str) -> Project`
@@ -59,44 +60,56 @@ This section describes the endpoints available in the `Client` class for interac
 - **Create Project:** `create_project(name: str, description: str) -> Project`
   - Creates a new project.
 
-- **Update Project:** `update_project(project_id: str, name: str, description: str) -> Project`
+- **Update Project:** `update_project(project_id: str, name: str, description: str, tags: List[str]) -> Project`
   - Updates an existing project.
 
 - **Delete Project:** `delete_project(project_id: str) -> None`
   - Deletes a project by its ID.
+
+- **Tag Projects:** `tag_projects(project_ids: List[str], tags: List[str]) -> List[Project]`
+  - Adds tags to multiple projects.
+
+- **Get Projects by Tag:** `get_projects_by_tag(tag: str) -> List[Project]`
+  - Retrieves projects that have a specific tag.
 
 #### Organization Endpoints
 
 - **Get Organization:** `get_organization() -> Organization`
   - Retrieves the details of the organization.
 
-- **Update Organization:** `update_organization(name: str) -> Organization`
+- **Update Organization:** `update_organization(organization_id: str, name: str) -> Organization`
   - Updates the organization's name.
 
 - **Invite to Organization:** `invite_to_organization(email: str) -> None`
   - Invites a new member to the organization.
 
-#### FASTA Endpoints
+- **Get Resource Usage:** `get_resource_usage() -> OrganizationUsage`
+  - Retrieves the resource usage of the organization.
 
-- **Get All FASTA Databases:** `get_all_fastas() -> List[Fasta]`
-  - Retrieves a list of all FASTA databases.
+#### Database Endpoints
 
-- **Get FASTA Database by ID:** `get_fasta(fasta_id: str) -> Fasta`
-  - Retrieves a specific FASTA database by its ID.
+- **Get All Databases:** `get_databases() -> List[Database]`
+  - Retrieves a list of all databases.
 
-- **Update FASTA Database:** `update_fasta(fasta_id: str, name: str, organism: str, decoy_tag: Optional[str]) -> Fasta`
-  - Updates an existing FASTA database.
+- **Get Database by ID:** `get_database(database_id: str) -> Database`
+  - Retrieves a specific database by its ID.
 
-- **Create FASTA Database:** `create_fasta() -> Fasta`
-  - Creates a new FASTA database. (Not implemented)
+- **Update Database:** `update_database(database_id: str, name: str, organism: str, decoy_tag: Optional[str]) -> Database`
+  - Updates an existing database.
 
-- **Delete FASTA Database:** `delete_fasta(fasta_id: str) -> None`
-  - Deletes a FASTA database by its ID.
+- **Create Database:** `create_database(database_bytes: bytes, filename: str) -> Database`
+  - Creates a new database.
+
+- **Delete Database:** `delete_database(database_id: str) -> None`
+  - Deletes a database by its ID.
 
 #### Search Result Endpoints
 
-- **Get All Search Results:** `get_all_search_results() -> List[SearchResult]`
+- **Get All Search Results:** `get_search_results() -> List[SearchResult]`
   - Retrieves a list of all search results.
+
+- **Get Search Result by ID:** `get_search_result(search_result_id: str) -> Optional[SearchResult]`
+  - Retrieves a specific search result by its ID.
 
 - **Get Search Result Download:** `get_search_result_download(search_result_id: str) -> SearchResultDownload`
   - Retrieves the download URLs for a specific search result.
@@ -129,3 +142,27 @@ This section describes the endpoints available in the `Client` class for interac
 
 - **Get QC Precursors:** `get_qc_precursors(search_result_id: str) -> List[QcPrecursor]`
   - Retrieves the QC precursors for a specific search result.
+
+#### User Profile Endpoints
+
+- **Get User Profile:** `get_user_profile() -> Profile`
+  - Retrieves the user's profile information.
+
+- **Update User Profile:** `update_user_profile(first_name: str, last_name: str) -> Profile`
+  - Updates the user's profile information.
+
+#### Project File Endpoints
+
+- **Get Project Files:** `get_project_files(project_id: str) -> List[ProjectFile]`
+  - Retrieves the files for a specific project.
+
+- **Get Project File:** `get_project_file(project_id: str, file_id: str) -> ProjectFile`
+  - Retrieves a specific file from a project by its ID.
+
+- **Upload Project File:** `upload_project_file(project_id: str, file_bytes: bytes, filename: str)`
+  - Uploads a file to a specific project.
+
+#### Search Submission Endpoints
+
+- **Submit Search:** `submit_search(project_id: str, search_settings: Dict) -> None`
+  - Submits a search request for a specific project.

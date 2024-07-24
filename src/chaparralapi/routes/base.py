@@ -11,13 +11,14 @@ def get_headers(token: str) -> Dict[str, str]:
     }
 
 
-def get(token: str, url: str, timeout: Optional[int] = None) -> Any:
+def get(token: str, url: str, timeout: Optional[int] = None) -> Optional[Any]:
     try:
         response = requests.get(url=url,
                                 headers=get_headers(token),
                                 timeout=timeout)
         response.raise_for_status()
-        return response.json()
+        if response.text:
+            return response.json()
     except Timeout as exc:
         raise Timeout(f'Request to {url} timed out.') from exc
 
@@ -42,7 +43,8 @@ def put(token: str, url: str, data: Dict[str, Any], timeout: Optional[int] = Non
                                 json=data,
                                 timeout=timeout)
         response.raise_for_status()
-        return response.json()
+        if response.text:
+            return response.json()
     except Timeout as exc:
         raise Timeout(f'Request to {url} timed out.') from exc
 
