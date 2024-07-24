@@ -1,8 +1,10 @@
+from typing import List
+
 from ping3 import ping
 from . import constants
 
 
-def _get_best_server(ips: list[str]) -> str:
+def _get_best_server(ips: List[str]) -> str:
     """
     Get the best server from a list of IPs based on ping time
 
