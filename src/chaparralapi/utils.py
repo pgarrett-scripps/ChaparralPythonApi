@@ -18,10 +18,13 @@ def _get_best_server(ips: List[str]) -> str:
     best_time = float('inf')
 
     for ip in ips:
-        ping_time = ping(ip, timeout=2)
+        ping_time = ping(ip, timeout=1)
         if ping_time is not None and ping_time < best_time:
             best_time = ping_time
             best_ip = ip
+
+    if best_ip is None:
+        return constants.DEFAULT_BASE_URL
 
     return best_ip
 
