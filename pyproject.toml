@@ -25,8 +25,10 @@ classifiers = [
 keywords = ["chaparral", "api", "bioinformatics"]
 
 dependencies = [
-    "requests>=2.25.1",
-    "pydantic>=1.8"
+    "requests>=2.31.0",
+    "pydantic>=2.7.1",
+    "pydantic[email]>=2.7.1",
+    "ping3>=4.0.8"
 ]
 
 [project.optional-dependencies]

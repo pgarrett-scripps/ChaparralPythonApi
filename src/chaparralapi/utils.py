@@ -1,6 +1,7 @@
 from ping3 import ping
 from . import constants
 
+
 def _get_best_server(ips: list[str]) -> str:
     """
     Get the best server from a list of IPs based on ping time
@@ -21,6 +22,7 @@ def _get_best_server(ips: list[str]) -> str:
             best_ip = ip
 
     return best_ip
+
 
 def get_best_chaparral_server() -> str:
     """
