@@ -33,6 +33,7 @@ class ProteinGroupIterable:
         return f'ProteinGroupIterable("{self.protein_group._protein_names}")'
 
 
+
 class ProteinIterable:
 
     def __init__(self, protein: Protein, res: 'Result') -> None:

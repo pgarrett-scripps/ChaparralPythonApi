@@ -32,6 +32,16 @@ class ProteinsGroup:
         return f'ProteinsGroup("{self._protein_names}")'
 
 
+    def dict(self):
+        return {
+            'protein_names': self.protein_names,
+            'descriptions': self.descriptions,
+            'gene_names': self.gene_names,
+            'psms': self.psms,
+            'peptide_sequences': self.peptide_sequences,
+            'protein_q': self.protein_q
+        }
+
 @dataclass(frozen=True)
 class Protein:
     name: str
@@ -46,6 +56,15 @@ class Protein:
 
     def __repr__(self) -> str:
         return f'Protein("{self.name}")'
+
+    def dict(self):
+        return {
+            'name': self.name,
+            'description': self.description,
+            'gene_name': self.gene_name,
+            'psms': self.psms,
+            'peptide_sequences': self.peptide_sequences
+        }
 
 
 @dataclass(frozen=True)
@@ -73,3 +92,15 @@ class Peptide:
 
     def __repr__(self) -> str:
         return f'Peptide("{self.sequence}")'
+
+    def dict(self):
+        return {
+            'sequence': self.sequence,
+            'protein_names': self.protein_names,
+            'descriptions': self.descriptions,
+            'gene_names': self.gene_names,
+            'psms': self.psms,
+            'peptide_q': self.peptide_q,
+            'best_filename': self.best_filename,
+            'best_scannr': self.best_scannr
+        }
