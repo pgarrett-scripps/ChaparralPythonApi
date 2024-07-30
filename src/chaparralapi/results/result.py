@@ -33,7 +33,6 @@ class ProteinGroupIterable:
         return f'ProteinGroupIterable("{self.protein_group._protein_names}")'
 
 
-
 class ProteinIterable:
 
     def __init__(self, protein: Protein, res: 'Result') -> None:
@@ -249,8 +248,3 @@ class Result:
     def get_peptide_iterable(self, sequence: str) -> PeptideIterable:
         peptide = next(peptide for peptide in self.peptides if peptide.sequence == sequence)
         return PeptideIterable(peptide, self)
-
-
-
-
-

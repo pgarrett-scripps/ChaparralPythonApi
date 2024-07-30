@@ -3,6 +3,8 @@ from typing import Optional, Literal
 
 from pydantic import BaseModel
 
+from ..custom_types import STATUS_TYPES
+
 
 class ProjectFile(BaseModel):
     """
@@ -17,4 +19,4 @@ class ProjectFile(BaseModel):
     organization_id: str
     created_at: datetime
     job_id: Optional[str]
-    job_status: Optional[Literal['FAILED', 'SUCCEEDED', 'SUBMITTED', 'RUNNING', 'RUNNABLE', 'PENDING', 'STARTING']] = None
+    job_status: Optional[STATUS_TYPES] = None
