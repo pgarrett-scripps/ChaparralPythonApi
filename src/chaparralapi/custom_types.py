@@ -1,0 +1,3 @@
+from typing import Literal
+
+STATUS_TYPES = Literal['FAILED', 'SUCCEEDED', 'SUBMITTED', 'RUNNING', 'RUNNABLE', 'PENDING', 'STARTING']

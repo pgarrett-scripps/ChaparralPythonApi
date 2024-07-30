@@ -4,7 +4,8 @@ from typing import Optional, List, Dict, Any, Literal
 
 from pydantic import BaseModel
 
-from chaparralapi.models import SearchConfig
+from ..custom_types import STATUS_TYPES
+from ..models import SearchConfig
 
 
 class SearchResult(BaseModel):
@@ -25,7 +26,7 @@ class SearchResult(BaseModel):
     created_at: datetime
     started_at: Optional[datetime]
     finished_at: Optional[datetime]
-    status: Literal['FAILED', 'SUCCEEDED', 'SUBMITTED', 'RUNNING', 'RUNNABLE', 'PENDING', 'STARTING']
+    status: STATUS_TYPES
     cpu: int
     memory: int
 

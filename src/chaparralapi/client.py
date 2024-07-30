@@ -12,6 +12,7 @@ from requests.exceptions import Timeout
 from .constants import DEFAULT_BASE_URL
 from . import models
 from . import routes
+from .custom_types import STATUS_TYPES
 from .utils import get_best_chaparral_server
 
 LOGGING_LEVELS = Literal['CRITICAL', 'FATAL', 'ERROR', 'ERROR', 'WARN', 'WARNING', 'INFO', 'DEBUG', 'NOTSET']
@@ -298,7 +299,7 @@ class Client:
         routes.databases.delete_database(token=self.token, database_id=database_id, base_url=self.base_url,
                                          timeout=self.timeout)
 
-    def get_search_results(self) -> List[models.SearchResult]:
+    def get_search_results(self, status: Optional[STATUS_TYPES] = None) -> List[models.SearchResult]:
         """
         Retrieves a list of search results.
 
@@ -307,7 +308,12 @@ class Client:
         """
         results_data = routes.search_results.get_search_results(token=self.token, base_url=self.base_url,
                                                                 timeout=self.timeout)
-        return [models.SearchResult.model_validate(result) for result in results_data]
+        search_results = [models.SearchResult.model_validate(result) for result in results_data]
+
+        if status:
+            return [result for result in search_results if result.status == status]
+
+        return search_results
 
     def get_search_result(self, search_result_id: str) -> Optional[models.SearchResult]:
         """
