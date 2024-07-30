@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from typing import List
 
@@ -31,7 +30,6 @@ class ProteinsGroup:
     def __repr__(self) -> str:
         return f'ProteinsGroup("{self._protein_names}")'
 
-
     def dict(self):
         return {
             'protein_names': self.protein_names,
@@ -41,6 +39,7 @@ class ProteinsGroup:
             'peptide_sequences': self.peptide_sequences,
             'protein_q': self.protein_q
         }
+
 
 @dataclass(frozen=True)
 class Protein:

@@ -173,8 +173,8 @@ class Result:
 
         for peptide in self.peptides:
             proteins = set()
-            for protein_sequence in peptide.protein_names:
-                protein = next(protein for protein in self.proteins if protein.name == protein_sequence)
+            for protein_name in peptide.protein_names:
+                protein = next(protein for protein in self.proteins if protein.name == protein_name)
                 proteins.add(protein)
             self.peptide_to_proteins[peptide] = proteins
 
@@ -188,26 +188,33 @@ class Result:
         self.protein_groups = list(parse_protein_groups(data))
         uncombined_proteins = list(parse_proteins(self.peptides))
 
-        # sort by name
-        self.proteins = sorted(uncombined_proteins, key=lambda x: x.name)
+        # Sort by name
+        uncombined_proteins = sorted(uncombined_proteins, key=lambda x: x.name)
         merged_proteins = []
         curr_protein = None
         psm_cnt = 0
         peptides = []
+
         for uncombined_protein in uncombined_proteins:
-            if curr_protein.name if curr_protein else None != uncombined_protein.name:
-                if curr_protein:
+            if curr_protein is None or curr_protein.name != uncombined_protein.name:
+                if curr_protein is not None:
                     merged_proteins.append(
                         Protein(curr_protein.name, curr_protein.description, curr_protein.gene_name, psm_cnt,
-                                ';'.join(peptides)))
+                                ';'.join(peptides))
+                    )
 
                 curr_protein = uncombined_protein
                 psm_cnt = 0
                 peptides = []
 
             psm_cnt += uncombined_protein.psms
-            peptides.append(
-                uncombined_protein.peptide_sequences[0])  # should only be 1 since they were generated from peptides
+            peptides.append(uncombined_protein.peptide_sequences[0])  # Assuming there is only 1 peptide sequence
+
+        if curr_protein is not None:
+            merged_proteins.append(
+                Protein(curr_protein.name, curr_protein.description, curr_protein.gene_name, psm_cnt,
+                        ';'.join(peptides))
+            )
 
         self.proteins = merged_proteins
 
@@ -230,6 +237,18 @@ class Result:
     def peptide_iterable(self) -> Generator[PeptideIterable, None, None]:
         for peptide in self.peptides:
             yield PeptideIterable(peptide, self)
+
+    def get_protein_iterable(self, name: str) -> ProteinIterable:
+        protein = next(protein for protein in self.proteins if protein.name == name)
+        return ProteinIterable(protein, self)
+
+    def get_protein_group_iterable(self, name: str) -> ProteinGroupIterable:
+        group = next(group for group in self.protein_groups if name in group.protein_names)
+        return ProteinGroupIterable(group, self)
+
+    def get_peptide_iterable(self, sequence: str) -> PeptideIterable:
+        peptide = next(peptide for peptide in self.peptides if peptide.sequence == sequence)
+        return PeptideIterable(peptide, self)
 
 
 
