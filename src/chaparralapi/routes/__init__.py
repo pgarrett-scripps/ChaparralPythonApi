@@ -1,7 +1,8 @@
 from . import databases
 from .project import get_projects, get_project, create_project, update_project, delete_project
 from .project_file import get_project_files, upload_project_file
-from .search_results import get_search_results, delete_search_result
+from .search_results import (get_search_results, delete_search_result, get_psm_annotations, get_spectra,
+                             get_peptides_from_protein_id, get_peptides_from_peptide_id)
 from .search_result_qc import get_qc_scores, get_qc_ids, get_qc_precursors
 from .profile import get_profile, update_profile
 from .organization import get_organization

@@ -27,3 +27,26 @@ def delete_search_result(token: str, search_result_id: str, base_url: str = DEFA
                          timeout: Optional[int] = None) -> None:
     url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}"
     delete(token, url, timeout)
+
+
+def get_peptides_from_protein_id(token: str, search_result_id: str, protein_id: str, base_url: str = DEFAULT_BASE_URL,
+                 timeout: Optional[int] = None) -> List[Dict[str, Any]]:
+    url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}/protein/{protein_id}"
+    return get(token, url, timeout)
+
+def get_peptides_from_peptide_id(token: str, search_result_id: str, peptide_id: str, base_url: str = DEFAULT_BASE_URL,
+                    timeout: Optional[int] = None) -> List[Dict[str, Any]]:
+    url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}/peptide/{peptide_id}"
+    return get(token, url, timeout)
+
+
+def get_psm_annotations(token: str, search_result_id: str, psm_id: int,
+                        base_url: str = DEFAULT_BASE_URL, timeout: Optional[int] = None) -> List[Dict[str, Any]]:
+    url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}/psm_annotation/{psm_id}"
+    return get(token, url, timeout)
+
+
+def get_spectra(token: str, search_result_id: str, filename: str, scannr: str, base_url: str = DEFAULT_BASE_URL,
+                timeout: Optional[int] = None) -> List[Dict[str, Any]]:
+    url = f"{base_url}/{DEFAULT_SEARCH_RESULTS_ENDPOINT}/{search_result_id}/{filename}/{scannr}/mzparquet"
+    return get(token, url, timeout)

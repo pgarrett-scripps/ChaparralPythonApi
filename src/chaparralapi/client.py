@@ -2,9 +2,11 @@
 The Client class is a wrapper around the Chaparral API.
 """
 import os
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, IO, TextIO, BinaryIO, Literal
+import logging
 
 import requests
+from requests import HTTPError
 from requests.exceptions import Timeout
 
 from .constants import DEFAULT_BASE_URL
@@ -12,8 +14,9 @@ from . import models
 from . import routes
 from .utils import get_best_chaparral_server
 
+LOGGING_LEVELS = Literal['CRITICAL', 'FATAL', 'ERROR', 'ERROR', 'WARN', 'WARNING', 'INFO', 'DEBUG', 'NOTSET']
 
-def _fetch_file(url: str, timeout: Optional[int]) -> str:
+def _fetch_file(url: str, timeout: Optional[int]) -> bytes:
     """
     Fetches the content of a file from a given URL.
 
@@ -21,14 +24,14 @@ def _fetch_file(url: str, timeout: Optional[int]) -> str:
     :type url: str
     :param timeout: The timeout duration for the request in seconds.
     :type timeout: Optional[int]
-    :return: The content of the file.
-    :rtype: str
+    :return: The content of the file in bytes.
+    :rtype: bytes
     :raises Timeout: If the request times out.
     """
     try:
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
-        return response.text
+        return response.content
     except Timeout as exc:
         raise Timeout(f'Request to {url} timed out.') from exc
 
@@ -48,7 +51,7 @@ class Client:
     """
 
     def __init__(self, token: str, base_url: Optional[str] = DEFAULT_BASE_URL, timeout: Optional[float] = 10,
-                 file_upload_timeout: Optional[float] = 60):
+                 file_upload_timeout: Optional[float] = 60, log_level: LOGGING_LEVELS = 'INFO'):
         self.token = token
 
         if base_url is None:
@@ -58,6 +61,34 @@ class Client:
         self.timeout = timeout
         self.file_upload_timeout = file_upload_timeout
 
+        # Setup logger
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(log_level)
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(handler)
+
+    def configure_logging(self, log_level: LOGGING_LEVELS):
+        """
+        Configures the logging level.
+
+        :param log_level: The logging level to set.
+        :type log_level: str
+        """
+        self.logger.setLevel(log_level)
+
+    def test_connection(self) -> bool:
+        """
+        Tests the connection to the Chaparral API.
+
+        :return: True if the connection is successful, False otherwise.
+        """
+        try:
+            self.get_user_profile()
+            return True
+        except HTTPError:
+            return False
+
     def get_projects(self) -> List[models.Project]:
         """
         Retrieves a list of projects.
@@ -66,6 +97,7 @@ class Client:
         :rtype: List[models.Project]
         """
         projects_data = routes.project.get_projects(token=self.token, base_url=self.base_url, timeout=self.timeout)
+        self.logger.debug(f'Projects data retrieved: {projects_data}')
         return [models.Project.model_validate(project) for project in projects_data]
 
     def get_project(self, project_id: str) -> models.Project:
@@ -79,6 +111,7 @@ class Client:
         """
         project_data = routes.project.get_project(token=self.token, project_id=project_id, base_url=self.base_url,
                                                   timeout=self.timeout)
+        self.logger.debug(f'Project data retrieved: {project_data}')
         return models.Project.model_validate(project_data)
 
     def get_projects_by_tag(self, tag: str) -> List[models.Project]:
@@ -297,89 +330,160 @@ class Client:
         :return: The SearchResultDownload model.
         :rtype: models.SearchResultDownload
         """
-        result_download_data = routes.search_results_download.read_search_result_download(token=self.token,
-                                                                                          search_result_id=search_result_id,
-                                                                                          base_url=self.base_url,
-                                                                                          timeout=self.timeout)
+        result_download_data = (
+            routes.search_results_download.read_search_result_download(token=self.token,
+                                                                       search_result_id=search_result_id,
+                                                                       base_url=self.base_url,
+                                                                       timeout=self.timeout))
         return models.SearchResultDownload.model_validate(result_download_data)
 
-    def fetch_config_json(self, search_result_id: str) -> str:
+    def fetch_config_json(self, search_result_id: str, download_path: Optional[str] = None) -> Optional[bytes]:
         """
         Fetches the configuration JSON file for a specific search result.
 
         :param search_result_id: The ID of the search result.
         :type search_result_id: str
-        :return: The content of the configuration JSON file.
-        :rtype: str
+        :param download_path: The path to save the downloaded file. Optional.
+        :type download_path: str | None
+        :return: The content of the configuration JSON file or None if download_path is provided.
+        :rtype: str | None
         """
         search_result_download = self.get_search_result_download(search_result_id)
         config_json = _fetch_file(search_result_download.config_json, self.timeout)
-        return config_json
 
-    def fetch_matched_fragments_parquet(self, search_result_id: str) -> str:
+        if download_path:
+            with open(download_path, 'wb') as f:
+                f.write(config_json)
+        else:
+            return config_json
+
+    def fetch_matched_fragments_parquet(self, search_result_id: str, download_path: Optional[str] = None) \
+            -> Optional[bytes]:
         """
         Fetches the matched fragments Parquet file for a specific search result.
 
         :param search_result_id: The ID of the search result.
         :type search_result_id: str
-        :return: The content of the matched fragments Parquet file.
-        :rtype: str
+        :param download_path: The path to save the downloaded file. Optional.
+        :type download_path: str | None
+        :return: The content of the matched fragments Parquet file or None if download_path is provided.
+        :rtype: bytes | None
         """
         search_result_download = self.get_search_result_download(search_result_id)
         matched_fragments_parquet = _fetch_file(search_result_download.matched_fragments_parquet, self.timeout)
-        return matched_fragments_parquet
+        if download_path:
+            with open(download_path, 'wb') as f:
+                f.write(matched_fragments_parquet)
+        else:
+            return matched_fragments_parquet
 
-    def fetch_peptide_csv(self, search_result_id: str) -> str:
+    def fetch_peptide_csv(self, search_result_id: str, download_path: Optional[str] = None) -> Optional[bytes]:
         """
         Fetches the peptide CSV file for a specific search result.
 
         :param search_result_id: The ID of the search result.
         :type search_result_id: str
-        :return: The content of the peptide CSV file.
-        :rtype: str
+        :param download_path: The path to save the downloaded file. Optional.
+        :type download_path: str | None
+        :return: The content of the peptide CSV file. or None if download_path is provided.
+        :rtype: bytes | None
         """
         search_result_download = self.get_search_result_download(search_result_id)
         peptide_csv = _fetch_file(search_result_download.peptide_csv, self.timeout)
-        return peptide_csv
+        if download_path:
+            with open(download_path, 'wb') as f:
+                f.write(peptide_csv)
+        else:
+            return peptide_csv
 
-    def fetch_proteins_csv(self, search_result_id: str) -> str:
+    def fetch_proteins_csv(self, search_result_id: str, download_path: Optional[str] = None) -> Optional[bytes]:
         """
         Fetches the proteins CSV file for a specific search result.
 
         :param search_result_id: The ID of the search result.
         :type search_result_id: str
-        :return: The content of the proteins CSV file.
-        :rtype: str
+        :param download_path: The path to save the downloaded file. Optional.
+        :type download_path: str | None
+        :return: The content of the proteins CSV file or None if download_path is provided.
+        :rtype: bytes | None
         """
         search_result_download = self.get_search_result_download(search_result_id)
         proteins_csv = _fetch_file(search_result_download.proteins_csv, self.timeout)
-        return proteins_csv
+        if download_path:
+            with open(download_path, 'wb') as f:
+                f.write(proteins_csv)
+        else:
+            return proteins_csv
 
-    def fetch_results_json(self, search_result_id: str) -> str:
+    def fetch_results_json(self, search_result_id: str, download_path: Optional[str] = None) -> Optional[bytes]:
         """
         Fetches the results JSON file for a specific search result.
 
         :param search_result_id: The ID of the search result.
         :type search_result_id: str
-        :return: The content of the results JSON file.
-        :rtype: str
+        :param download_path: The path to save the downloaded file. Optional.
+        :type download_path: str | None
+        :return: The content of the results JSON file or None if download_path is provided.
+        :rtype: bytes | None
         """
         search_result_download = self.get_search_result_download(search_result_id)
         results_json = _fetch_file(search_result_download.results_json, self.timeout)
-        return results_json
+        if download_path:
+            with open(download_path, 'wb') as f:
+                f.write(results_json)
+        else:
+            return results_json
 
-    def fetch_results_parquet(self, search_result_id: str) -> str:
+    def fetch_results_parquet(self, search_result_id: str, download_path: Optional[str] = None) -> Optional[bytes]:
         """
         Fetches the results Parquet file for a specific search result.
 
         :param search_result_id: The ID of the search result.
         :type search_result_id: str
-        :return: The content of the results Parquet file.
-        :rtype: str
+        :param download_path: The path to save the downloaded file. Optional.
+        :type download_path: str | None
+        :return: The content of the results Parquet file or None if download_path is provided.
+        :rtype: bytes | None
         """
         search_result_download = self.get_search_result_download(search_result_id)
         results_parquet = _fetch_file(search_result_download.results_parquet, self.timeout)
-        return results_parquet
+
+        if download_path:
+            with open(download_path, 'wb') as f:
+                f.write(results_parquet)
+        else:
+            return results_parquet
+
+    def download_all_files(self, search_result_id: str, download_folder: str, folder_name: Optional[str] = None):
+        """
+        Downloads all the files for a specific search result to a specified folder.
+
+        :param search_result_id: The ID of the search result.
+        :type search_result_id: str
+        :param download_folder: The folder to save the downloaded files.
+        :type download_folder: str
+        :param folder_name: The name of the folder to save the files. Optional, defaults to the search result ID.
+        :type folder_name: str | None
+        """
+
+        if folder_name is None:
+            folder_name = search_result_id
+
+        download_path = os.path.join(download_folder, folder_name)
+        os.makedirs(download_path, exist_ok=True)
+
+        # Define the file types and corresponding methods
+        file_types = {
+            "config.json": self.fetch_config_json,
+            "matched_fragments.parquet": self.fetch_matched_fragments_parquet,
+            "peptide.csv": self.fetch_peptide_csv,
+            "proteins.csv": self.fetch_proteins_csv,
+            "results.json": self.fetch_results_json,
+            "results.parquet": self.fetch_results_parquet,
+        }
+
+        for filename, fetch_method in file_types.items():
+            fetch_method(search_result_id=search_result_id, download_path=os.path.join(download_path, filename))
 
     def get_qc_scores(self, search_result_id: str) -> List[models.QcScore]:
         """
@@ -448,7 +552,7 @@ class Client:
         raw_files = self.get_project_files(project_id)
         return next((raw_file for raw_file in raw_files if raw_file.id == file_id), None)
 
-    def upload_project_file(self, project_id: str, file_bytes: bytes, filename: str) -> None:
+    def upload_project_file(self, project_id: str, file: IO, filename: str) -> None:
         """
         Uploads a file to a specific project.
 
@@ -459,7 +563,7 @@ class Client:
         :param filename: The name of the file to upload.
         :type filename: str
         """
-        routes.project_file.upload_project_file(token=self.token, project_id=project_id, file_bytes=file_bytes,
+        routes.project_file.upload_project_file(token=self.token, project_id=project_id, file=file,
                                                 filename=filename, base_url=self.base_url,
                                                 timeout=self.file_upload_timeout)
 
@@ -486,10 +590,10 @@ class Client:
             raise ValueError(f"No .tdf or .tdfbin files found in {folder_path}")
 
         for file in files:
-            if file.endswith('.tdf') or file.endswith('.tdfbin'):
+            if file.endswith('.tdf') or file.endswith('.tdf_bin'):
                 file_path = os.path.join(folder_path, file)
                 with open(file_path, 'rb') as f:
-                    self.upload_project_file(project_id, f.read(), file_basename)
+                    self.upload_project_file(project_id, f, file_basename + '.' + file)
 
     def upload_raw_file(self, project_id: str, file_path: str, file_basename: str = None) -> None:
         """
@@ -511,7 +615,7 @@ class Client:
             raise ValueError(f"File {file_basename} is not a .raw file.")
 
         with open(file_path, 'rb') as f:
-            self.upload_project_file(project_id, f.read(), file_basename)
+            self.upload_project_file(project_id, f, file_basename)
 
     def submit_search(self, project_id: str, search_settings: Dict) -> None:
         """
@@ -533,6 +637,39 @@ class Client:
 
         routes.search_results.create_search(token=self.token, project_id=project_id, search_config=search_settings,
                                             base_url=self.base_url, timeout=self.timeout)
+
+    def can_search(self, project_id: str) -> bool:
+        """
+        Checks if a project can be searched.
+
+        :param project_id: The ID of the project.
+        :type project_id: str
+        :return: True if the project can be searched, False otherwise.
+        :rtype: bool
+        """
+        project_files = self.get_project_files(project_id)
+        statuses = {file.job_status for file in project_files}
+        self.logger.debug(f'Statuses: {statuses}')
+        if 'SUCCEEDED' in statuses:
+            return True
+        return False
+
+    def is_processing_files(self, project_id: str) -> bool:
+        """
+        Checks if a project is currently processing files.
+
+        :param project_id: The ID of the project.
+        :type project_id: str
+        :return: True if the project is processing files, False otherwise.
+        :rtype: bool
+        """
+        project_files = self.get_project_files(project_id)
+        statuses = {file.job_status for file in project_files}
+
+        if 'FAILED' in statuses or 'SUCCEEDED' in statuses:
+            return False
+
+        return True
 
     def get_resource_usage(self) -> models.OrganizationUsage:
         """
@@ -566,3 +703,63 @@ class Client:
         """
         data = {'first_name': first_name, 'last_name': last_name}
         routes.profile.update_profile(token=self.token, data=data, base_url=self.base_url, timeout=self.timeout)
+
+    def get_spectra(self, search_result_id: str, filename: str, scannr: str) -> List[models.ScanData]:
+        """
+        Retrieves the spectra for a specific search result and scan number.
+
+        :param search_result_id: The ID of the search result.
+        :type search_result_id: str
+        :param filename: The filename of the spectra.
+        :type filename: str
+        :param scannr: The scan number.
+        :type scannr: str
+        :return: A list of spectra.
+        :rtype: List[Dict[str, Any]]
+        """
+        data = routes.search_results.get_spectra(token=self.token, search_result_id=search_result_id, filename=filename,
+                                                 scannr=scannr, base_url=self.base_url, timeout=self.timeout)
+        return [models.ScanData.model_validate(scan) for scan in data]
+
+    def get_psm_annotations(self, search_result_id: str, psm_id: int) -> List[models.FragmentData]:
+        """
+        Retrieves the PSM annotations for a specific search result and PSM ID.
+
+        :param search_result_id: The ID of the search result.
+        :type search_result_id: str
+        :param psm_id: The PSM ID.
+        :type psm_id: int
+        :return: A list of PSM annotations.
+        :rtype: List[Dict[str, Any]]
+        """
+        data = routes.search_results.get_psm_annotations(token=self.token, search_result_id=search_result_id,
+                                                         psm_id=psm_id, base_url=self.base_url, timeout=self.timeout)
+        return [models.FragmentData.model_validate(fragment) for fragment in data]
+
+    def get_peptide_results(self, search_result_id: str, query_id: str,
+                            query_type: Literal['peptide', 'protein'] = 'protein') -> List[models.PeptideResult]:
+        """
+        Retrieves the peptides for a specific search result and protein ID.
+
+        :param search_result_id: The ID of the search result.
+        :type search_result_id: str
+        :param query_id: The protein ID, or peptide ID.
+        :type query_id: str
+        :param query_type: The type of query, either 'peptide' or 'protein'. Defaults to 'protein'.
+        :type query_type: Literal['peptide', 'protein']
+        :return: A list of peptides.
+        :rtype: List[Dict[str, Any]]
+        """
+
+        if query_type == 'protein':
+            data = routes.get_peptides_from_protein_id(token=self.token, search_result_id=search_result_id,
+                                                       protein_id=query_id, base_url=self.base_url,
+                                                       timeout=self.timeout)
+        elif query_type == 'peptide':
+            data = routes.get_peptides_from_peptide_id(token=self.token, search_result_id=search_result_id,
+                                                       peptide_id=query_id, base_url=self.base_url,
+                                                       timeout=self.timeout)
+        else:
+            raise ValueError(f'Invalid query type: {query_type}')
+
+        return [models.PeptideResult.model_validate(peptide) for peptide in data]

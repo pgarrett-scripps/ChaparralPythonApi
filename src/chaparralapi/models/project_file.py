@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 
 from pydantic import BaseModel
 
@@ -17,4 +17,4 @@ class ProjectFile(BaseModel):
     organization_id: str
     created_at: datetime
     job_id: Optional[str]
-    job_status: Optional[str]
+    job_status: Optional[Literal['FAILED', 'SUCCEEDED', 'SUBMITTED', 'RUNNING', 'RUNNABLE', 'PENDING', 'STARTING']] = None
