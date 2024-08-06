@@ -43,8 +43,6 @@ To get your Chaparral API token, follow these steps:
 5. Copy the token from the `Authorization` header.
 6. The token will be valid for 8 hours.
 
-Sure, here is the updated README to include the new endpoints in the `Client` class:
-
 ## Endpoints
 
 This section describes the endpoints available in the `Client` class for interacting with the Chaparral API.
@@ -104,6 +102,15 @@ This section describes the endpoints available in the `Client` class for interac
   - Deletes a database by its ID.
 
 #### Search Result Endpoints
+
+- **Get Spectra:** `get_spectra(search_result_id: str, filename: str, scannr: str) -> List[ScanData]`
+  - Retrieves the spectra for a specific search result and scan number.
+
+- **Get PSM Annotations:** `get_psm_annotations(search_result_id: str, psm_id: int) -> List[FragmentData]`
+  - Retrieves the PSM annotations for a specific search result and PSM ID.
+
+- **Get Peptide Results:** `get_peptide_results(search_result_id: str, query_id: str, query_type: Literal['peptide', 'protein'] = 'protein') -> List[PeptideResult]`
+  - Retrieves the peptides for a specific search result and protein ID or peptide ID.
 
 - **Get All Search Results:** `get_search_results() -> List[SearchResult]`
   - Retrieves a list of all search results.
